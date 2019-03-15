@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" serverName="wornchaos.org">
+    <serverData>
+      <paths name="wornchaos.org">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/kglover/wornchaos.org/moment" local="$PROJECT_DIR$" web="/moment" />
+            <mapping local="" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="8d830012-d243-4c34-9ba3-65cd339e5b25" name="wornchaos.org" url="http://wornchaos.org">
+        <fileTransfer host="wornchaos.org" port="22" rootFolder="/home/kglover/wornchaos.org" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

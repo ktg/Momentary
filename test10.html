@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Test</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<style>
+		body {
+			margin: 0;
+			background-color: #000000;
+			overflow: hidden;
+		}
+
+		#endSelect {
+			display: none;
+			position: absolute;
+			color: #FFF;
+			top: 0;
+			left: 0;
+		}
+	</style>
+</head>
+<body>
+
+<script src="js/three.js"></script>
+<script src="js/lines/LineSegments2.js"></script>
+<script src="js/lines/LineSegmentGeometry.js"></script>
+<script src="js/lines/LineMaterial.js"></script>
+<script src="js/lines/Lines2.js"></script>
+<script src="js/lines/LineGeometry.js"></script>
+<script src="js/shaders/CopyShader.js"></script>
+<script src="js/postprocessing/EffectComposer.js"></script>
+<script src="js/shaders/FXAAShader.js"></script>
+<script src="js/postprocessing/ShaderPass.js"></script>
+<script src="js/postprocessing/RenderPass.js"></script>
+<script src="js/postprocessing/OutlinePass.js"></script>
+<script src="js/OrbitControls.js"></script>
+<script src="js/TweenLite.min.js"></script>
+<script src="js/toblerone.js"></script>
+
+<script>
+	const segmentCount = 19;
+	const raycaster = new THREE.Raycaster();
+	const mouse = new THREE.Vector2();
+	let toblerones = [];
+	let highlighted = null;
+	let selected = null;
+	let selectedOrigin = null;
+
+	function createObjects(scene) {
+		const count = 25;
+		const item_per_row = 5;
+		const distance = 50;
+		const offset = (item_per_row - 1) / 2;
+		for (let i = 0; i < count; i++) {
+			const toblerone = createToblerone(segmentCount);
+			toblerone.position.set(((i % item_per_row) - offset) * distance, (Math.floor(i / item_per_row) * -distance), 0);
+			toblerones.push(toblerone);
+			scene.add(toblerone);
+		}
+	}
+
+	function createScene() {
+		const scene = new THREE.Scene();
+		scene.background = new THREE.Color(0x000000);
+		scene.fog = new THREE.Fog(0x000000, 400, 800);
+
+		const light = new THREE.AmbientLight(0xFFFFFF);
+		scene.add(light);
+
+		createObjects(scene);
+
+		return scene;
+	}
+
+	const renderer = new THREE.WebGLRenderer({antialias: true});
+	renderer.setPixelRatio(window.devicePixelRatio);
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	document.body.appendChild(renderer.domElement);
+
+	const camera = new THREE.PerspectiveCamera(20, window.innerWidth / window.innerHeight, 1, 2000);
+	camera.position.set(0, -10, 500);
+
+	const scene = createScene();
+	const outlinePass = new THREE.OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
+
+	const composer = new THREE.EffectComposer(renderer);
+	const renderPass = new THREE.RenderPass(scene, camera);
+	const effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
+	effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+	effectFXAA.renderToScreen = true;
+	composer.addPass(renderPass);
+	composer.addPass(outlinePass);
+	composer.addPass(effectFXAA);
+
+	window.addEventListener('resize', onWindowResize, false);
+	document.addEventListener('click', onDocumentClick, false);
+	document.addEventListener('mousemove', onDocumentMouseMove, false);
+	document.addEventListener('mousewheel', onDocumentScroll, false);
+
+	animate();
+
+	function animate() {
+		requestAnimationFrame(animate);
+
+		raycaster.setFromCamera(mouse, camera);
+
+		const intersects = raycaster.intersectObjects(toblerones);
+		if (selected === null && intersects.length > 0) {
+			highlighted = intersects[0].object;
+			outlinePass.selectedObjects = [highlighted];
+		} else {
+			highlighted = null;
+			outlinePass.selectedObjects = [];
+		}
+
+		composer.render();
+	}
+
+	function onDocumentClick() {
+		if (highlighted !== null) {
+			selected = highlighted;
+			for (const toblerone of toblerones) {
+				if (toblerone !== selected) {
+					TweenLite.to(toblerone.position, 3, {z: -400});
+				}
+			}
+
+			selectedOrigin = selected.position.clone();
+
+			TweenLite.to(selected.rotation, 5, {x: -Math.PI, z: -Math.PI / 2});
+			TweenLite.to(selected.position, 5, {x: camera.position.x, y: camera.position.y, z: 100});
+
+			document.getElementById('endSelect').style.display = 'block';
+			//selected.rotation.x = -Math.PI;
+			//selected.rotation.y = -Math.PI;
+			//selected.rotation.z = -Math.PI / 2;
+		}
+	}
+
+	function endSelection() {
+		if (selected !== null) {
+
+			TweenLite.to(selected.rotation, 5, {x: -Math.PI / 2, z: -Math.PI});
+			TweenLite.to(selected.position, 5, {x: selectedOrigin.x, y: selectedOrigin.y, z: 0});
+			for (const toblerone of toblerones) {
+				if (toblerone !== selected) {
+					//toblerone.children[0].material.transparent = true;
+					TweenLite.to(toblerone.position, 3, {z: 0});
+				}
+			}
+
+			document.getElementById('endSelect').style.display = 'none';
+			selected = null;
+		}
+	}
+
+	function onDocumentScroll(event) {
+		if (selected === null) {
+			camera.position.y += (event.wheelDelta / 10.0);
+		}
+	}
+
+	function onDocumentMouseMove(event) {
+		event.preventDefault();
+		mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+		mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+	}
+
+	function onWindowResize() {
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		composer.setSize(window.innerWidth, window.innerHeight);
+
+		effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+	}
+</script>
+<div id="endSelect" class="material-icons" onclick="endSelection()">close</div>
+</body>
+</html>
