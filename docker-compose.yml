@@ -1,0 +1,13 @@
+api:
+    build: .
+    links:
+        - 'mongo:mongo'
+    environment:
+        NODE_ENV: 'development'
+    ports:
+        - "0.0.0.0:9000:9000"
+
+mongo:
+    image: mongo:latest
+    ports:
+        - "27017"

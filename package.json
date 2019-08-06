@@ -1,0 +1,40 @@
+{
+	"name": "momentary",
+	"version": "0.1.0",
+	"main": "app.js",
+	"dependencies": {
+		"body-parser": "^1.19.0",
+		"compression": "^1.7.4",
+		"csv-parser": "^2.3.0",
+		"express": "^4.17.1",
+		"method-override": "^3.0.0",
+		"mongoose": "^5.5.14"
+	},
+	"devDependencies": {
+		"@types/compression": "^0.0.36",
+		"@types/express": "^4.17.0",
+		"@types/gsap": "^1.20.2",
+		"@types/method-override": "^0.0.31",
+		"@types/mongoose": "^5.5.11",
+		"@types/chart.js": "^2.7.56",
+		"copy-webpack-plugin": "^5.0.4",
+		"gsap": "^2.1.3",
+		"html-webpack-plugin": "^3.2.0",
+		"three": "^0.107.0",
+		"ts-loader": "^6.0.4",
+		"tslint": "^5.18.0",
+		"tslint-microsoft-contrib": "^6.2.0",
+		"typescript": "^3.5.3",
+		"webpack": "^4.38.0",
+		"webpack-cli": "^3.3.6",
+		"chart.js": "^2.8.0"
+	},
+	"scripts": {
+		"build-server": "cd ./src/server && tsc",
+		"build-client": "cd ./src/client && webpack",
+		"express": "node ./server/app.js",
+		"parseCSV": "docker exec momentary_api_1 node ./server/utils/parseCSV.js"
+	},
+	"author": "Kevin Glover",
+	"license": "MIT"
+}

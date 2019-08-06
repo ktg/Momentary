@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>The Moment</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<script defer src="bundle.js"></script>
+	<style>
+		body {
+			margin: 0;
+			background-color: #000000;
+			overflow: hidden;
+		}
+
+		#endSelect {
+			display: none;
+			position: absolute;
+			color: #FFF;
+			top: 70%;
+			left: 0;
+			cursor: pointer;
+			font-size: 32pt;
+		}
+
+		#title {
+			position: absolute;
+			color: #DDD;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			height: 30%;
+			display: flex;
+			justify-content: center;
+			text-transform: uppercase;
+			font-size: 80pt;
+			font-family: "Roboto Condensed", "Helvetica Condensed", "Arial Narrow", "Arial", "Helvetica", sans-serif;
+			align-items: center;
+			transition: opacity 2s
+		}
+
+		#video {
+			display: none;
+			width: 100%;
+			height: 65%;
+			position: absolute;
+		}
+
+		#details {
+			position: absolute;
+			color: #DDD;
+			top: 65%;
+			left: 0;
+			right: 0;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			font-size: 20pt;
+			font-family: "Roboto Condensed", "Helvetica Condensed", "Arial Narrow", "Arial", "Helvetica", sans-serif;
+		}
+
+		#details div {
+			padding-left: 8px;
+			padding-right: 8px;
+		}
+
+		#details-path1 {
+			color: red;
+		}
+
+		#details-path2 {
+			color: limegreen;
+		}
+
+		#details-path3 {
+			color: dodgerblue;
+		}
+
+		#details-date {
+			font-size: 16px;
+		}
+
+		#screeningInput {
+			display: none;
+		}
+	</style>
+</head>
+<body>
+<div id="details">
+	<div>
+		<div>Screening <span id="details-screening">150</span></div>
+		<div id="details-date">13 Aug 2019</div>
+	</div>
+	<div id="details-path1">29%</div>
+	<div id="details-path2">31%</div>
+	<div id="details-path3">40%</div>
+</div>
+<div id="title">The Moment</div>
+<div id="endSelect" class="material-icons">close</div>
+<input id="screeningInput" type="text" placeholder="Screening">
+<iframe id="video"
+        allowfullscreen webkitallowfullscreen mozAllowFullScreen
+        allow="autoplay *; fullscreen *; encrypted-media *" frameborder="0"></iframe>
+</body>
+</html>

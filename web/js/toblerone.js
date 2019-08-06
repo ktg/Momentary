@@ -1,29 +1,3 @@
-function generateRandomPath(segmentCount) {
-	let primary = [];
-	let secondary = [];
-
-	for (let i = 0; i < segmentCount; i++) {
-		let primaryItem = Math.floor(Math.random() * 3);
-		if (i !== 0) {
-			const priorPrimary = primary[i - 1];
-			const priorSecondary = secondary[i - 1];
-			while (primaryItem !== priorPrimary && primaryItem !== priorSecondary) {
-				primaryItem = Math.floor(Math.random() * 3);
-			}
-		}
-		let secondaryItem = primaryItem;
-		while (secondaryItem === primaryItem) {
-			secondaryItem = Math.floor(Math.random() * 3);
-		}
-		primary.push(primaryItem);
-		secondary.push(secondaryItem);
-	}
-	return {
-		primary: primary,
-		secondary: secondary
-	}
-}
-
 function generateTexture(path) {
 	const size = 1024;
 	const sideSize = 1024 / 3;
@@ -31,7 +5,7 @@ function generateTexture(path) {
 	const gradStart = 128 + 64;
 	const gradBase = 0;
 	const gradSize = gradEnd - gradStart;
-	const segmentSize = 1024 / path.primary.length;
+	const segmentSize = 1024 / path.length;
 	const canvas = document.createElement('canvas');
 	canvas.width = size;
 	canvas.height = size;
@@ -48,8 +22,8 @@ function generateTexture(path) {
 			y++;
 			segment = Math.floor(y / segmentSize);
 		}
-		const primaryEdge = path.primary[segment];
-		const secondaryEdge = path.secondary[segment];
+		const primaryEdge = path[segment].primary;
+		const secondaryEdge = path[segment].secondary;
 		let value = gradBase;
 		if (edge1 === primaryEdge && edge2 === secondaryEdge) {
 			const progress = 1 - ((x % sideSize) / sideSize);
@@ -89,7 +63,7 @@ function getColour(offset) {
 }
 
 function createTobleroneGeometry(path, size = 20, length = 10) {
-	const geometry = new THREE.CylinderBufferGeometry(size, size, path.primary.length * length, 3, 1, true);
+	const geometry = new THREE.CylinderBufferGeometry(size, size, path.length * length, 3, 1, true);
 	const positions = geometry.attributes.position;
 	const count = positions.count;
 	geometry.addAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
@@ -138,8 +112,6 @@ function createLineSegment(pointStart, pointEnd, colourStart, colourEnd) {
 			vertexColours.push(colour.r, colour.g, colour.b);
 		}
 
-
-
 		material = new THREE.MeshPhongMaterial({
 			alphaTest: 0.2,
 			color: 0xFFFFFF,
@@ -166,9 +138,9 @@ function createLineSegment(pointStart, pointEnd, colourStart, colourEnd) {
 function createLine(path, positions, parent, length = 10) {
 	let previous = -1;
 	let startPosition = null;
-	for (let i = 0; i < path.primary.length; i++) {
+	for (let i = 0; i < path.length; i++) {
 		const yOffset = i * length;
-		const current = path.primary[i];
+		const current = path[i].primary;
 
 		if (i !== 0) {
 			if (previous !== current) {
@@ -190,17 +162,16 @@ function createLine(path, positions, parent, length = 10) {
 		previous = current;
 	}
 
-	const yOffset = path.primary.length * length;
+	const yOffset = path.length * length;
 	const endPosition = new THREE.Vector3(positions.getX(previous), positions.getY(previous) - yOffset, positions.getZ(previous));
 	parent.add(createLineSegment(startPosition, endPosition, getColour(previous)));
 }
 
-function createToblerone(segmentCount) {
-	const path = generateRandomPath(segmentCount);
-	const tobleroneGeometry = createTobleroneGeometry(path);
+function createToblerone(screening) {
+	const tobleroneGeometry = createTobleroneGeometry(screening.scenes);
 	const texture = new THREE.TextureLoader().load("textures/texture3.jpg");
 	texture.anisotropy = 4;
-	const alphaTexture = new THREE.Texture(generateTexture(path));
+	const alphaTexture = new THREE.Texture(generateTexture(screening.path));
 	alphaTexture.needsUpdate = true;
 	alphaTexture.anisotropy = 4;
 	const tobleroneMaterial = new THREE.MeshPhongMaterial({
@@ -217,7 +188,7 @@ function createToblerone(segmentCount) {
 	});
 	const toblerone = new THREE.Mesh(tobleroneGeometry, tobleroneMaterial);
 
-	createLine(path, tobleroneGeometry.attributes.position, toblerone);
+	createLine(screening.path, tobleroneGeometry.attributes.position, toblerone);
 
 	toblerone.rotation.x = -Math.PI / 2;
 	toblerone.rotation.y = -Math.PI;

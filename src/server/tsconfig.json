@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"module": "commonjs",
+		"noImplicitAny": true,
+		"outDir": "../../server/",
+		"pretty": true,
+		"removeComments": true,
+		"sourceMap": true,
+		"target": "es6"
+	},
+	"include": [
+        "**/*"
+    ],
+	"exclude": [
+		"../../node_modules"
+	],
+	"typeRoots": [
+		"node_modules/@types"
+	]
+}
