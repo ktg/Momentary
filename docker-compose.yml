@@ -3,9 +3,9 @@ api:
     links:
         - 'mongo:mongo'
     environment:
-        NODE_ENV: 'development'
+        NODE_ENV: 'production'
     ports:
-        - "0.0.0.0:9000:9000"
+        - "0.0.0.0:80:80"
 
 mongo:
     image: mongo:latest
