@@ -18,6 +18,7 @@
 .idea/**/gradle.xml
 .idea/**/libraries
 
-press images/
 node_modules/
 data/videos/
+build/
+server/

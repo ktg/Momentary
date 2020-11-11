@@ -2,13 +2,11 @@ const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-	entry: './bundle.ts',
+	entry: './moment.ts',
 	devtool: 'inline-source-map',
 	mode: "development",
 	plugins: [
-		new CopyPlugin([
-			{ from: 'static' }
-		])
+		new CopyPlugin({patterns: [{from: 'static'}]})
 	],
 	module: {
 		rules: [
@@ -22,7 +20,7 @@ module.exports = {
 		extensions: ['.ts', '.js']
 	},
 	output: {
-		filename: 'bundle.js',
-		path: path.resolve(__dirname, '../../server/static')
+		filename: 'moment.js',
+		path: path.resolve(__dirname, '../../server')
 	}
 };

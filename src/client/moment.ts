@@ -7,13 +7,29 @@ import {ShaderPass} from "three/examples/jsm/postprocessing/ShaderPass";
 import {FXAAShader} from "three/examples/jsm/shaders/FXAAShader";
 import {TweenLite} from "gsap";
 import {Screening} from "./screening";
-//import {Chart} from 'chart.js';
+import log = require("loglevel");
+import remote = require ('loglevel-plugin-remote')
+import {uuid} from "uuidv4"
+
+const windowId = uuid()
+// Enable Remote Logging
+remote.apply(log, {
+	url: "/3/loglevel/themoment",
+	token: "VSFthq6ibr5lY6p7PpdJDfkBV1qqlYBn",
+	format(message) {
+		message.level = message.level.label
+		message.windowid = windowId
+		return message
+	}
+});
+log.setLevel("INFO")
 
 const raycaster = new Raycaster();
 const mouse = new Vector2();
 let toblerones: Toblerone[] = [];
 let highlighted: Toblerone = null;
 let selected: Toblerone = null;
+let compare: Toblerone = null;
 
 function createObjects(scene: Scene, screenings: Screening[]) {
 	const item_per_row = 5;
@@ -52,50 +68,61 @@ function api<T>(url: string): Promise<T> {
 	//})
 }
 
-const renderer = new WebGLRenderer({antialias: true});
-renderer.setPixelRatio(window.devicePixelRatio);
-document.body.appendChild(renderer.domElement);
+const renderer = new WebGLRenderer({antialias: true})
+renderer.setPixelRatio(window.devicePixelRatio)
+document.body.appendChild(renderer.domElement)
 
-const camera = new PerspectiveCamera(20, window.innerWidth / window.innerHeight, 1, 2000);
-camera.position.set(0, -10, 500);
+const camera = new PerspectiveCamera(20, window.innerWidth / window.innerHeight, 1, 2000)
+camera.position.set(0, -10, 500)
 
-const scene = createScene();
-const outlinePass = new OutlinePass(new Vector2(window.innerWidth, window.innerHeight), scene, camera);
+const scene = createScene()
+const outlinePass = new OutlinePass(new Vector2(window.innerWidth, window.innerHeight), scene, camera)
 
-let frameRequest: number = 0;
-const composer = new EffectComposer(renderer);
-const effectFXAA = new ShaderPass(FXAAShader);
-effectFXAA.renderToScreen = true;
-composer.addPass(new RenderPass(scene, camera));
-composer.addPass(outlinePass);
-composer.addPass(effectFXAA);
+let frameRequest: number = 0
+const composer = new EffectComposer(renderer)
+const effectFXAA = new ShaderPass(FXAAShader)
+effectFXAA.renderToScreen = true
+composer.addPass(new RenderPass(scene, camera))
+composer.addPass(outlinePass)
+composer.addPass(effectFXAA)
 
-onWindowResize();
+onWindowResize()
 
-window.addEventListener('resize', onWindowResize, false);
-document.addEventListener('click', onDocumentClick, false);
-document.addEventListener('mousemove', onDocumentMouseMove, false);
-document.addEventListener('mousewheel', onDocumentScroll, false);
+window.addEventListener('resize', onWindowResize, false)
+document.addEventListener('click', onDocumentClick, false)
+document.addEventListener('mousemove', onDocumentMouseMove, false)
+document.addEventListener('mousewheel', onDocumentScroll, false)
 
-// Consumer - consumer remains the same
-api<Screening[]>('api/screening/list')
+const vidElement = <HTMLVideoElement>document.getElementById('video')
+vidElement.onplay = () => {
+	log.info(selected.screening.id + " playing from " + vidElement.currentTime)
+}
+vidElement.onpause = () => {
+	log.info(selected.screening.id + " pausing at " + vidElement.currentTime)
+}
+
+api<Screening[]>('data.json')
 	.then((screenings) => {
-		createObjects(scene, screenings);
+		log.info("Loaded " + screenings.length + " screenings")
+		log.info(screenings.map((screening) => {
+			return screening.id
+		}).join(', '))
+		createObjects(scene, screenings)
 		document.getElementById('endSelect').addEventListener('click', () => {
-			selectToblerone(null);
+			selectToblerone(null)
 		});
 
 		const input = <HTMLInputElement>document.getElementById('screeningInput');
 		input.addEventListener('input', () => {
-			selectToblerone(findTolberone(input.value));
-		});
+			selectToblerone(findTolberone(input.value))
+		})
 
-		const hash = location.hash.replace(/^(#)/, "");
-		selectToblerone(findTolberone(hash), false);
-		animate();
+		const hash = location.hash.replace(/^(#)/, "")
+		selectToblerone(findTolberone(hash), false)
+		animate()
 	})
 	.catch(error => {
-		console.log(error)
+		log.error(error)
 	});
 
 function findTolberone(id: string): Toblerone {
@@ -107,30 +134,49 @@ function findTolberone(id: string): Toblerone {
 	return null
 }
 
-
 function animate() {
 	frameRequest = requestAnimationFrame(animate);
 
 	raycaster.setFromCamera(mouse, camera);
 
-	const intersects = raycaster.intersectObjects(toblerones);
-	if (selected === null && intersects.length > 0) {
-		const item = intersects[0].object;
-		if (isToblerone(item)) {
-			highlightToblerone(item);
-		} else {
-			highlightToblerone(null);
+	const intersects = raycaster.intersectObjects(toblerones)
+	if (intersects.length > 0) {
+		if (selected === null) {
+			const item = intersects[0].object
+			if (isToblerone(item)) {
+				highlightToblerone(item)
+			} else {
+				highlightToblerone(null)
+			}
+		} else if (selected === intersects[0].object) {
+			highlightToblerone(null)
+			selected.positionLine.position.y = -intersects[0].point.x
+			selected.positionLine.visible = true
 		}
 	} else {
-		highlightToblerone(null);
+		if (selected !== null) {
+			selected.positionLine.visible = false
+		}
+		highlightToblerone(null)
 	}
-
-	composer.render();
+	composer.render()
 }
 
 function onDocumentClick() {
-	if (highlighted !== null) {
-		selectToblerone(highlighted)
+	if (selected === null) {
+		if (highlighted !== null) {
+			selectToblerone(highlighted)
+		}
+	} else {
+		if (selected.positionLine.visible) {
+			const vidElement = <HTMLVideoElement>document.getElementById('video');
+			if (vidElement.duration > 0) {
+				const length = selected.screening.scenes.reduce((sum, current) => sum + current.length, 0) / 10
+				const offset = (length / 2) - selected.positionLine.position.y
+				vidElement.currentTime = (offset / length) * vidElement.duration
+				log.info(selected.screening.id + " skipped to " + vidElement.currentTime)
+			}
+		}
 	}
 }
 
@@ -165,11 +211,18 @@ function showDetails() {
 		document.getElementById('details-path1').innerText = toblerone.screening.threads[0].toString() + '%';
 		document.getElementById('details-path2').innerText = toblerone.screening.threads[1].toString() + '%';
 		document.getElementById('details-path3').innerText = toblerone.screening.threads[2].toString() + '%';
+		document.getElementById('details-cuts').innerText = toblerone.screening.totalCuts.toString() + ' cuts';
 	}
+}
+
+function startCompare() {
+	compare = selected;
+	selectToblerone(null);
 }
 
 function selectToblerone(toblerone: Toblerone, animated: Boolean = true) {
 	if (toblerone === null && selected !== null) {
+		log.info(selected.screening.id + " Unselected")
 		if (animated) {
 			TweenLite.to(selected.rotation, 5, {x: -Math.PI / 2, z: -Math.PI});
 			TweenLite.to(selected.position, 5, {x: selected.origin.x, y: selected.origin.y, z: 0});
@@ -185,22 +238,42 @@ function selectToblerone(toblerone: Toblerone, animated: Boolean = true) {
 			}
 		}
 
-		const vidElement = <HTMLIFrameElement>document.getElementById('video');
-		vidElement.src = 'about:blank';
+		const vidElement = <HTMLVideoElement>document.getElementById('video')
+		vidElement.ontimeupdate = function () {
+		}
+		selected.progressLine.visible = false
+		vidElement.pause()
+		vidElement.removeAttribute('src')
+		vidElement.load()
 		vidElement.style.display = 'none';
 		animate();
 
 		document.getElementById('endSelect').style.display = 'none';
-		document.getElementById('title').style.opacity = '1';
+		document.getElementById('header').style.opacity = '1';
+		document.getElementById('header').style.display = 'flex';
 		selected = null;
 		window.location.hash = '';
 		const input = <HTMLInputElement>document.getElementById('screeningInput');
 		input.value = '';
+	} else if (compare !== null && toblerone !== compare && toblerone !== selected) {
+		// TODO Compare
 	} else if (toblerone !== null && toblerone !== selected) {
+		log.info(toblerone.screening.id + " Selected")
 		selected = toblerone;
-		const vidElement = <HTMLIFrameElement>document.getElementById('video');
+		const vidElement = <HTMLVideoElement>document.getElementById('video');
 		window.location.hash = '#' + selected.screening.id;
-		vidElement.src = 'https://cdnapisec.kaltura.com/html5/html5lib/v2.72/mwEmbedFrame.php/p/1355621/uiconf_id/13188771/entry_id/' + selected.screening.video + '?wid=_1355621&iframeembed=true&playerId=kaltura_player&flashvars[streamerType]=auto&amp;flashvars[localizationCode]=en&amp;flashvars[leadWithHTML5]=true&amp;flashvars[sideBarContainer.plugin]=true&amp;flashvars[sideBarContainer.position]=left&amp;flashvars[sideBarContainer.clickToClose]=true&amp;flashvars[chapters.plugin]=true&amp;flashvars[chapters.layout]=vertical&amp;flashvars[chapters.thumbnailRotator]=false&amp;flashvars[streamSelector.plugin]=true&amp;flashvars[EmbedPlayer.SpinnerTarget]=videoHolder&amp;flashvars[dualScreen.plugin]=true&amp;flashvars[Kaltura.addCrossoriginToIframe]=true&amp';
+		vidElement.src = 'videos/' + selected.screening.id + '.mp4';
+		vidElement.ontimeupdate = function () {
+			if (vidElement.duration > 0) {
+				const length = toblerone.screening.scenes.reduce((sum, current) => sum + current.length, 0) / 10;
+				let offset = length / 2;
+				offset -= (vidElement.currentTime / vidElement.duration) * length;
+				toblerone.progressLine.position.y = offset;
+				toblerone.progressLine.visible = true;
+			} else {
+				toblerone.progressLine.visible = false;
+			}
+		};
 
 		if (animated) {
 			for (const toblerone of toblerones) {
@@ -210,8 +283,12 @@ function selectToblerone(toblerone: Toblerone, animated: Boolean = true) {
 			}
 			TweenLite.to(selected.rotation, 5, {
 				x: -Math.PI, z: -Math.PI / 2, onComplete: () => {
-					vidElement.style.display = 'block';
-					cancelAnimationFrame(frameRequest);
+					if (selected !== null) {
+						vidElement.style.display = 'block';
+					} else {
+						vidElement.style.display = 'none';
+					}
+					//cancelAnimationFrame(frameRequest);
 				}
 			});
 			TweenLite.to(selected.position, 5, {x: camera.position.x, y: camera.position.y - 50, z: 100});
@@ -229,7 +306,8 @@ function selectToblerone(toblerone: Toblerone, animated: Boolean = true) {
 		}
 
 		document.getElementById('endSelect').style.display = 'block';
-		document.getElementById('title').style.opacity = '0';
+		document.getElementById('header').style.opacity = '0';
+		document.getElementById('header').style.display = 'none';
 		const input = <HTMLInputElement>document.getElementById('screeningInput');
 		input.value = selected.screening.id.toString();
 	}

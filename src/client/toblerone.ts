@@ -13,10 +13,11 @@ import {
 	Object3D,
 	Texture,
 	TextureLoader,
-	Vector3,
-	VertexColors
+	Vector3
 } from "three";
 import {Scene, Screening} from "./screening";
+
+const size = 15;
 
 export class Toblerone extends Mesh {
 	constructor(
@@ -30,6 +31,8 @@ export class Toblerone extends Mesh {
 
 	screening: Screening;
 	origin: Vector3;
+	progressLine: Mesh;
+	positionLine: Mesh;
 }
 
 export function isToblerone(mesh: Object3D): mesh is Toblerone {
@@ -37,14 +40,14 @@ export function isToblerone(mesh: Object3D): mesh is Toblerone {
 }
 
 function generateTexture(path: Scene[]): HTMLCanvasElement {
-	console.log(path);
+	//console.log(path);
+	const totalLength = path.reduce((sum, current) => sum + current.length, 0) / 10;
 	const size = 1024;
 	const sideSize = 1024 / 3;
 	const gradEnd = 256;
 	const gradStart = 128 + 64;
 	const gradBase = 0;
 	const gradSize = gradEnd - gradStart;
-	const segmentSize = 1024 / path.length;
 	const canvas = document.createElement('canvas');
 	canvas.width = size;
 	canvas.height = size;
@@ -59,7 +62,18 @@ function generateTexture(path: Scene[]): HTMLCanvasElement {
 		const edge2 = (side + 1) % 3;
 		if (x === 0) {
 			y++;
-			segment = path[Math.min(path.length - 1, Math.floor(y / segmentSize))];
+			const proportion = y / size;
+			let progress = totalLength * proportion * 10;
+			for (const scene of path) {
+				progress -= scene.length;
+				if (progress <= 0) {
+					segment = scene;
+					break;
+				}
+			}
+			if (segment == null) {
+				segment = path[path.length - 1];
+			}
 		}
 		const primaryEdge = segment.primary;
 		const secondaryEdge = segment.secondary;
@@ -82,30 +96,40 @@ function generateTexture(path: Scene[]): HTMLCanvasElement {
 }
 
 function colourFor(colour: Color, offset: number) {
+	colour.setHex(getColour(offset));
+}
+
+function getColour(offset: number): number {
 	if (offset === 1) {
-		colour.setRGB(0, 1, 0);
+		return 0x11EE11
 	} else if (offset === 2) {
-		colour.setRGB(0, 0, 1);
+		return 0x1111EE
 	} else {
-		colour.setRGB(1, 0, 0);
+		return 0xEE1111
 	}
 }
 
-function getColour(offset: number) {
-	if (offset === 1) {
-		return 0x00FF00
-	} else if (offset === 2) {
-		return 0x0000FF
-	} else {
-		return 0xFF0000
-	}
+function createBaseToblerone(screening: Screening): Toblerone {
+	const totalLength = screening.scenes.reduce((sum, current) => sum + current.length, 0) / 10;
+	const geometry = new CylinderBufferGeometry(size, size, totalLength, 3, 1, false);
+	const material = new MeshPhongMaterial({
+		alphaTest: 0.2,
+		color: 0xFFFFFF,
+		flatShading: true,
+		opacity: 0,
+		shininess: 0,
+		side: DoubleSide,
+		transparent: true
+	});
+	return new Toblerone(screening, geometry, material);
 }
 
-function createTobleroneGeometry(path: Scene[], size = 20, length = 10): BufferGeometry {
-	const geometry = new CylinderBufferGeometry(size, size, path.length * length, 3, 1, true);
+function createTobleroneGeometry(path: Scene[]): BufferGeometry {
+	const totalLength = path.reduce((sum, current) => sum + current.length, 0) / 10;
+	const geometry = new CylinderBufferGeometry(size, size, totalLength, 3, 1, true);
 	const positions = geometry.attributes.position;
 	const count = positions.count;
-	geometry.addAttribute('color', new BufferAttribute(new Float32Array(count * 3), 3));
+	geometry.setAttribute('color', new BufferAttribute(new Float32Array(count * 3), 3));
 	const colour = new Color();
 	const colours = geometry.attributes.color;
 
@@ -117,18 +141,36 @@ function createTobleroneGeometry(path: Scene[], size = 20, length = 10): BufferG
 	return geometry;
 }
 
+function createProgressLine(path: Scene[], opacity = 1): Mesh {
+	const progressLineGeometry = new CylinderBufferGeometry(size, size, 0.5, 3, 1, true);
+	const transparent = opacity !== 1;
+	const material = new MeshPhongMaterial({
+		alphaTest: 0.2,
+		color: 0xFFFFFF,
+		flatShading: true,
+		opacity: opacity,
+		shininess: 0,
+		side: DoubleSide,
+		transparent: transparent
+	});
+	const mesh = new Mesh(progressLineGeometry, material);
+	mesh.visible = false;
+	return mesh;
+}
+
 function createLineSegment(pointStart: Vector3, pointEnd: Vector3, colourStart: number, colourEnd: number): Mesh {
 	const sides = 4;
 
 	const direction = new Vector3().subVectors(pointEnd, pointStart);
 	const orientation = new Matrix4();
 	orientation.lookAt(pointStart, pointEnd, new Object3D().up);
-	orientation.multiply(new Matrix4().set(1, 0, 0, 0,
+	orientation.multiply(new Matrix4().set(
+		1, 0, 0, 0,
 		0, 0, 1, 0,
 		0, -1, 0, 0,
 		0, 0, 0, 1));
 	const edgeGeometry = new CylinderBufferGeometry(0.5, 0.5, direction.length(), sides, 1, true);
-	let material = null;
+	let material: MeshPhongMaterial;
 	if (colourEnd == null) {
 		material = new MeshPhongMaterial({
 			alphaTest: 0.2,
@@ -159,14 +201,14 @@ function createLineSegment(pointStart: Vector3, pointEnd: Vector3, colourStart: 
 			shininess: 0,
 			side: DoubleSide,
 			transparent: false,
-			vertexColors: VertexColors
+			vertexColors: true
 		});
 
-		edgeGeometry.addAttribute('color', new BufferAttribute(new Float32Array(vertexColours), 3));
+		edgeGeometry.setAttribute('color', new BufferAttribute(new Float32Array(vertexColours), 3));
 	}
 
 	const edge = new Mesh(edgeGeometry, material);
-	edge.applyMatrix(orientation);
+	edge.applyMatrix4(orientation);
 	// position based on midpoints - there may be a better solution than this
 	edge.position.x = (pointEnd.x + pointStart.x) / 2;
 	edge.position.y = (pointEnd.y + pointStart.y) / 2;
@@ -177,12 +219,10 @@ function createLineSegment(pointStart: Vector3, pointEnd: Vector3, colourStart: 
 function createLine(path: Scene[], positions: BufferAttribute | InterleavedBufferAttribute, parent: Mesh) {
 	let previous = -1;
 	let startPosition = null;
-	const length = 10;
-	for (let i = 0; i < path.length; i++) {
-		const yOffset = i * length;
-		const current = path[i].primary;
-
-		if (i !== 0) {
+	let yOffset = 0;
+	for (const scene of path) {
+		const current = scene.primary;
+		if (previous !== -1) {
 			if (previous !== current) {
 				const cornerPosition = new Vector3(positions.getX(previous), positions.getY(previous) - yOffset, positions.getZ(previous));
 				const endPosition = new Vector3(positions.getX(current), positions.getY(current) - yOffset, positions.getZ(current));
@@ -190,24 +230,22 @@ function createLine(path: Scene[], positions: BufferAttribute | InterleavedBuffe
 				parent.add(createLineSegment(startPosition, cornerPosition, getColour(previous), getColour(previous)));
 				parent.add(createLineSegment(cornerPosition, endPosition, getColour(previous), getColour(current)));
 
-				//vertices.push(new THREE.Vector3(positions.getX(offset), positions.getY(offset), positions.getZ(offset)));
-				//colourFor(colour, current);
-				//lineColours.push(colour.r, colour.g, colour.b)
 				startPosition = endPosition;
 			}
 		} else {
 			startPosition = new Vector3(positions.getX(current), positions.getY(current) - yOffset, positions.getZ(current));
 		}
 
+		yOffset += (scene.length / 10);
 		previous = current;
 	}
 
-	const yOffset = path.length * length;
 	const endPosition = new Vector3(positions.getX(previous), positions.getY(previous) - yOffset, positions.getZ(previous));
 	parent.add(createLineSegment(startPosition, endPosition, getColour(previous), getColour(previous)));
 }
 
 export function createToblerone(screening: Screening): Toblerone {
+	const toblerone = createBaseToblerone(screening);
 	const tobleroneGeometry = createTobleroneGeometry(screening.scenes);
 	const texture = new TextureLoader().load("textures/texture3.jpg");
 	texture.anisotropy = 4;
@@ -224,11 +262,19 @@ export function createToblerone(screening: Screening): Toblerone {
 		shininess: 0,
 		side: DoubleSide,
 		transparent: true,
-		vertexColors: VertexColors
+		vertexColors: true
 	});
-	const toblerone = new Toblerone(screening, tobleroneGeometry, tobleroneMaterial);
+	toblerone.add(new Mesh(tobleroneGeometry, tobleroneMaterial));
 
 	createLine(screening.scenes, tobleroneGeometry.attributes.position, toblerone);
+
+	const progressLine = createProgressLine(screening.scenes);
+	toblerone.add(progressLine);
+	toblerone.progressLine = progressLine;
+
+	const positionLine = createProgressLine(screening.scenes, 0.5);
+	toblerone.add(positionLine);
+	toblerone.positionLine = positionLine;
 
 	toblerone.rotation.x = -Math.PI / 2;
 	toblerone.rotation.y = -Math.PI;

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+      <sshConfig authType="PASSWORD" host="music-mrl.nott.ac.uk" id="9a55f0a1-453b-482f-9873-6e74dfcf5c63" port="22" nameFormat="DESCRIPTIVE" username="pszktg" />
+      <sshConfig authType="PASSWORD" host="wornchaos.org" id="fe252720-52b3-4fc8-b147-14b954e351f6" port="22" nameFormat="DESCRIPTIVE" username="kglover" />
+    </configs>
+  </component>
+</project>

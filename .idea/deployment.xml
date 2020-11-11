@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="wornchaos.org" compareModeInSync="TEXT">
+  <component name="PublishConfigData" serverName="music-mrl.nott.ac.uk" compareModeInSync="TEXT">
     <serverData>
+      <paths name="music-mrl.nott.ac.uk">
+        <serverdata>
+          <mappings>
+            <mapping deploy="." local="$PROJECT_DIR$/server" web="/" />
+            <mapping deploy="videos/" local="$PROJECT_DIR$/data/videos" web="/videos" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="wornchaos.org">
         <serverdata>
           <mappings>

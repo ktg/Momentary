@@ -3,11 +3,17 @@
   <component name="WebServers">
     <option name="servers">
       <webServer id="8d830012-d243-4c34-9ba3-65cd339e5b25" name="wornchaos.org" url="http://wornchaos.org">
-        <fileTransfer host="wornchaos.org" port="22" rootFolder="/home/kglover/wornchaos.org" accessType="SFTP">
+        <fileTransfer rootFolder="/home/kglover/wornchaos.org" accessType="SFTP" host="wornchaos.org" port="22" sshConfigId="fe252720-52b3-4fc8-b147-14b954e351f6" sshConfig="kglover@wornchaos.org:22 password">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>
-          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+      <webServer id="35504dba-d7ff-4aa4-86af-bbf73d80e5e1" name="music-mrl.nott.ac.uk" url="https://music-mrl.nott.ac.uk/3/themoment">
+        <fileTransfer rootFolder="/srv/mrl/mrl-music/html/3/themoment" accessType="SFTP" host="music-mrl.nott.ac.uk" port="22" sshConfigId="9a55f0a1-453b-482f-9873-6e74dfcf5c63" sshConfig="pszktg@music-mrl.nott.ac.uk:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
         </fileTransfer>
       </webServer>
     </option>

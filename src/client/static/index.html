@@ -5,7 +5,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-	<script defer src="bundle.js"></script>
+	<script defer src="moment.js"></script>
 	<style>
 		body {
 			margin: 0;
@@ -23,7 +23,7 @@
 			font-size: 32pt;
 		}
 
-		#title {
+		#header {
 			position: absolute;
 			color: #DDD;
 			bottom: 0;
@@ -32,18 +32,24 @@
 			height: 30%;
 			display: flex;
 			justify-content: center;
+			align-items: center;
+			flex-direction: column;
+		}
+
+		#title {
 			text-transform: uppercase;
 			font-size: 80pt;
 			font-family: "Roboto Condensed", "Helvetica Condensed", "Arial Narrow", "Arial", "Helvetica", sans-serif;
-			align-items: center;
 			transition: opacity 2s
 		}
 
-		#video {
+		#video, #compare {
 			display: none;
 			width: 100%;
 			height: 65%;
 			position: absolute;
+			justify-content: center;
+			align-items: center;
 		}
 
 		#details {
@@ -81,7 +87,10 @@
 		}
 
 		#screeningInput {
-			display: none;
+			background-color: #000;
+			border: 1px solid #333;
+			border-radius: 2px;
+			padding: 4px;
 		}
 	</style>
 </head>
@@ -94,12 +103,17 @@
 	<div id="details-path1">29%</div>
 	<div id="details-path2">31%</div>
 	<div id="details-path3">40%</div>
+	<div id="details-cuts">111 cuts</div>
 </div>
-<div id="title">The Moment</div>
+<div id="header">
+	<div id="title">The Moment</div>
+	<input id="screeningInput" type="text" placeholder="Find Screening...">
+</div>
 <div id="endSelect" class="material-icons">close</div>
-<input id="screeningInput" type="text" placeholder="Screening">
-<iframe id="video"
-        allowfullscreen webkitallowfullscreen mozAllowFullScreen
-        allow="autoplay *; fullscreen *; encrypted-media *" frameborder="0"></iframe>
+<video id="video" controls></video>
+<div id="compare">
+	<video id="compareVideo1"></video>
+	<video id="compareVideo2"></video>
+</div>
 </body>
 </html>
