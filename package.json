@@ -13,7 +13,7 @@
 		"light-server": "^2.7.0",
 		"loglevel": "^1.6.8",
 		"loglevel-plugin-remote": "^0.6.8",
-		"three": "^0.118.3",
+		"three": "^0.137.0",
 		"ts-loader": "^7.0.5",
 		"typescript": "^3.9.6",
 		"uuidv4": "^6.1.1",
